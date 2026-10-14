@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transistor-to-Qubit Learning Framework</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f7f8fa; --card:#ffffff; --fg:#1b2330; --muted:#5d6b7e; --line:#d9dee6;
+  --accent:#2563eb; --accent2:#e11d48; --ok:#15803d; --warn:#b45309; --code:#eef1f6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f141b; --card:#171e28; --fg:#e6ebf2; --muted:#98a5b8; --line:#2b3442;
+    --accent:#60a5fa; --accent2:#fb7185; --ok:#4ade80; --warn:#fbbf24; --code:#0c1118;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f141b; --card:#171e28; --fg:#e6ebf2; --muted:#98a5b8; --line:#2b3442;
+  --accent:#60a5fa; --accent2:#fb7185; --ok:#4ade80; --warn:#fbbf24; --code:#0c1118;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:22px 16px 10px;max-width:1000px;margin:0 auto}
+h1{font-size:1.5rem;margin:0 0 4px}
+header p{margin:0;color:var(--muted)}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav .in{max-width:1000px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:8px 12px}
+nav button{white-space:nowrap;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:7px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:.9rem}
+nav button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:1000px;margin:0 auto;padding:16px}
+section{display:none}
+section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+h2{font-size:1.2rem;margin:0 0 6px}
+h3{font-size:1rem;margin:14px 0 6px}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.grid{display:grid;gap:16px}
+@media(min-width:760px){.g2{grid-template-columns:1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}}
+.g4{grid-template-columns:repeat(2,1fr)}
+@media(min-width:760px){.g4{grid-template-columns:repeat(4,1fr)}}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left}
+th{color:var(--muted);font-weight:600}
+tr.hl td{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+label{display:block;font-size:.88rem;color:var(--muted);margin-top:10px}
+label b{color:var(--fg);font-weight:600}
+input[type=range]{width:100%}
+select,button.btn{font:inherit;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+button.btn:hover{border-color:var(--accent)}
+button.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+canvas{width:100%;max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.pill{display:inline-block;padding:3px 11px;border-radius:999px;font-weight:700;font-size:.85rem;border:1px solid var(--line)}
+.on1{background:var(--ok);color:#fff;border-color:var(--ok)}
+.off0{background:var(--code);color:var(--muted)}
+.led{width:46px;height:46px;border-radius:50%;border:2px solid var(--line);background:#ef4444;transition:opacity .1s}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;font-size:.82rem;line-height:1.45;margin:6px 0}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mono{font-size:.88rem}
+.bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.88rem}
+.bar .lab{width:48px;font-family:ui-monospace,Menlo,monospace}
+.bar .trk{flex:1;background:var(--code);border-radius:5px;height:18px;overflow:hidden}
+.bar .fil{height:100%;background:var(--accent);width:0;transition:width .15s}
+.bar .val{width:96px;text-align:right;font-variant-numeric:tabular-nums}
+.stat{font-size:1.25rem;font-weight:700}
+.gate{border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+.gate .nm{font-weight:700}
+.btn.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+.q{margin:14px 0}
+.q label{color:var(--fg);margin:4px 0;display:flex;gap:8px;font-size:.95rem}
+.good{color:var(--ok);font-weight:600}.bad{color:var(--accent2);font-weight:600}
+.note{border-left:4px solid var(--accent);padding:6px 12px;background:var(--code);border-radius:0 8px 8px 0;margin:10px 0}
+.copy{float:right}
+</style>
+</head>
+<body>
+<header>
+  <h1>From Transistors to Qubits</h1>
+  <p>A hybrid learning framework: start with the electronics you know, move step by step to quantum circuits (EDC Assignment #2).</p>
+</header>
+<nav><div class="in" id="tabs"></div></nav>
+<main>
+
+<!-- OVERVIEW -->
+<section id="s-over" data-title="Overview">
+  <div class="card">
+    <h2>The framework in four levels</h2>
+    <div class="grid g4">
+      <div class="gate"><div class="nm">Level 1</div>Transistor<br><span class="muted">Vin 0/1 &rarr; OFF/ON &rarr; classical bit</span></div>
+      <div class="gate"><div class="nm">Level 2</div>Logic gate<br><span class="muted">NOT &harr; X gate</span></div>
+      <div class="gate"><div class="nm">Level 3</div>Bit &rarr; Qubit<br><span class="muted">&alpha;|0&#10217; + &beta;|1&#10217;, Hadamard</span></div>
+      <div class="gate"><div class="nm">Level 4</div>Circuit vs circuit<br><span class="muted">Same function, two ways</span></div>
+    </div>
+    <p class="muted">Use the tabs: <b>A</b> Transistor, <b>B</b> Logic gates, <b>C</b> Quantum, <b>D</b> Comparison, then Noise, Assessment and Qiskit code.</p>
+  </div>
+  <div class="card">
+    <h2>Concept map: classical &rarr; quantum</h2>
+    <div class="tw"><table>
+      <tr><th>Electronics concept</th><th>Student already knows</th><th>Quantum counterpart</th></tr>
+      <tr><td>Transistor</td><td>Electronic switching device</td><td>Qubit as quantum information unit</td></tr>
+      <tr><td>ON/OFF</td><td>0/1</td><td>Measurement gives 0 or 1</td></tr>
+      <tr><td>Voltage/current state</td><td>Physical representation of information</td><td>Quantum state / amplitude</td></tr>
+      <tr><td>Logic gate</td><td>AND, OR, NOT</td><td>X, Y, Z, H, CNOT gates</td></tr>
+      <tr><td>NOT gate</td><td>Inverts 0 &harr; 1</td><td>X gate performs quantum bit flip</td></tr>
+      <tr><td>Digital circuit</td><td>Combination of logic gates</td><td>Quantum circuit</td></tr>
+      <tr><td>Noise</td><td>Disturbs transistor signal</td><td>Decoherence / quantum noise</td></tr>
+      <tr><td>Measurement</td><td>Reading circuit output</td><td>Quantum measurement</td></tr>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Suggested learning path</h2>
+    <p>1) Build the transistor switch on a breadboard (BJT/MOSFET + resistor + LED, Arduino/ESP32 as driver) and observe Vin = 0 &rarr; OFF, Vin = 1 &rarr; ON. 2) Explore Module A here. 3) Build the NOT gate and compare with the X gate. 4) Meet superposition with H. 5) Implement the same function both ways. 6) Add noise and compare. 7) Take the pre/post assessment.</p>
+  </div>
+</section>
+
+<!-- MODULE A -->
+<section id="s-a" data-title="A · Transistor">
+  <div class="card">
+    <h2>Module A &mdash; Transistor simulator (NPN BJT switch)</h2>
+    <p class="muted">Circuit: Vin &rarr; Rb &rarr; base; collector &rarr; LED + Rc &rarr; Vcc (5 V); emitter to ground. Output is the collector voltage. Model: V<sub>BE</sub> threshold, &beta; = 100, LED drop 2 V, V<sub>CE(sat)</sub> = 0.2 V.</p>
+    <div class="grid g2">
+      <div>
+        <label><b>Base voltage Vin</b>: <span id="a-vin-v"></span> V</label><input type="range" id="a-vin" min="0" max="5" step="0.01" value="0">
+        <label><b>Switching threshold V<sub>th</sub></b>: <span id="a-vth-v"></span> V</label><input type="range" id="a-vth" min="0.3" max="1.5" step="0.05" value="0.7">
+        <label><b>Load resistance Rc</b>: <span id="a-rc-v"></span> &Omega;</label><input type="range" id="a-rc" min="100" max="2200" step="10" value="330">
+        <label><b>Base resistor Rb</b>: <span id="a-rb-v"></span> k&Omega;</label><input type="range" id="a-rb" min="1" max="100" step="1" value="10">
+        <div class="row"><button class="btn" id="a-0">Vin = 0 (logic 0)</button><button class="btn" id="a-1">Vin = 5 V (logic 1)</button></div>
+      </div>
+      <div>
+        <div class="row"><div class="led" id="a-led"></div><div><div>Region: <b id="a-reg"></b></div><div class="muted">LED: <span id="a-ledtxt"></span></div></div></div>
+        <table>
+          <tr><td>Base current I<sub>B</sub></td><td class="mono" id="a-ib"></td></tr>
+          <tr><td>Collector/drain current I<sub>C</sub></td><td class="mono" id="a-ic"></td></tr>
+          <tr><td>Output voltage (collector)</td><td class="mono" id="a-vo"></td></tr>
+          <tr><td>Input as bit (Vin &ge; V<sub>th</sub>)</td><td><span class="pill" id="a-bin"></span></td></tr>
+          <tr><td>Output as bit (V<sub>out</sub> &gt; 2.5 V)</td><td><span class="pill" id="a-bout"></span></td></tr>
+        </table>
+        <div class="note">Level 1: 0/1 &rarr; classical bit. The collector output is the <b>inverse</b> of the LED state, which is exactly the NOT gate of Level 2.</div>
+      </div>
+    </div>
+    <canvas id="a-cv" width="760" height="300"></canvas>
+    <p class="muted">Blue: V<sub>out</sub> (0&ndash;5 V). Red: I<sub>C</sub> (scaled to saturation current). Dot = operating point.</p>
+  </div>
+  <div class="card">
+    <h3>Build it physically</h3>
+    <p>Arduino pin 5 &rarr; 10 k&Omega; &rarr; base of 2N2222/BC547 (or gate of a logic-level MOSFET with ~100 k&Omega; pulldown). 5 V &rarr; LED &rarr; 330 &Omega; &rarr; collector; emitter &rarr; GND. Read the collector on A0 (use a divider on a 3.3 V ESP32). See the Qiskit/Code tab for a sketch.</p>
+  </div>
+</section>
+
+<!-- MODULE B -->
+<section id="s-b" data-title="B · Logic gates">
+  <div class="card">
+    <h2>Module B &mdash; Logic-gate simulator</h2>
+    <div class="row">
+      <button class="btn" id="b-a">A = 0</button><button class="btn" id="b-b">B = 0</button>
+    </div>
+    <div class="grid g4" id="b-cards"></div>
+    <h3>Truth tables (current inputs highlighted)</h3>
+    <div class="tw"><table id="b-tt"></table></div>
+    <div class="note">Transistor view: NOT = one transistor + load. NAND = two transistors in series pulling the output low (NAND is universal). NOR = two in parallel. AND/OR = NAND/NOR followed by a NOT. XOR needs four NAND gates.</div>
+  </div>
+</section>
+
+<!-- MODULE C -->
+<section id="s-c" data-title="C · Quantum">
+  <div class="card">
+    <h2>Module C &mdash; Quantum simulator (2 qubits)</h2>
+    <p class="muted">Basis states are written |q1 q0&#10217;. Choose the initial state, add gates to build the circuit, then measure.</p>
+    <div class="row"><span>Initial q0:</span><button class="btn" id="c-i0">|0&#10217;</button><span>q1:</span><button class="btn" id="c-i1">|0&#10217;</button></div>
+    <div class="row"><span>Target qubit:</span>
+      <button class="btn sel" id="c-t0">q0</button><button class="btn" id="c-t1">q1</button>
+      <span style="width:12px"></span>
+      <button class="btn" data-g="X">X</button><button class="btn" data-g="Y">Y</button><button class="btn" data-g="Z">Z</button><button class="btn" data-g="H">H</button>
+      <button class="btn" id="c-cn01">CNOT q0&rarr;q1</button><button class="btn" id="c-cn10">CNOT q1&rarr;q0</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="c-undo">Undo</button><button class="btn" id="c-reset">Reset</button>
+      <button class="btn" id="c-bell">Preset: Bell state</button><button class="btn" id="c-sup">Preset: H on q0</button>
+      <button class="btn pri" id="c-meas">Measure (1024 shots)</button>
+    </div>
+    <pre id="c-circ" class="mono"></pre>
+    <div class="grid g2">
+      <div><h3>State vector</h3><div class="tw"><table id="c-amp"></table></div></div>
+      <div><h3>Probabilities</h3><div id="c-prob"></div><h3>Measurement counts</h3><div id="c-cnt" class="muted">Press Measure.</div></div>
+    </div>
+    <div class="note">Gates: X = bit flip, Z = phase flip (|1&#10217; &rarr; &minus;|1&#10217;), Y = both, H = superposition, CNOT = flips target if control is 1. Measurement collapses the state to 0 or 1 with probability |amplitude|&sup2;.</div>
+  </div>
+</section>
+
+<!-- MODULE D -->
+<section id="s-d" data-title="D · Comparison">
+  <div class="card">
+    <h2>Module D &mdash; Classical vs quantum</h2>
+    <div class="tw"><table>
+      <tr><th>Classical</th><th>Quantum</th></tr>
+      <tr><td>Bit</td><td>Qubit</td></tr>
+      <tr><td>0 / 1</td><td>&alpha;, &beta; (complex amplitudes)</td></tr>
+      <tr><td>NOT</td><td>X</td></tr>
+      <tr><td>Logic operation</td><td>Quantum gate (unitary, reversible)</td></tr>
+      <tr><td>Output</td><td>Measurement</td></tr>
+      <tr><td>Noise</td><td>Quantum noise / decoherence</td></tr>
+      <tr><td>Deterministic</td><td>Probabilistic measurement</td></tr>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Level 3 &mdash; Bit &rarr; Qubit</h2>
+    <p>Classical bit: <span class="mono">b &isin; {0, 1}</span>. Qubit: <span class="mono">|&psi;&#10217; = &alpha;|0&#10217; + &beta;|1&#10217;</span>, with |&alpha;|&sup2; + |&beta;|&sup2; = 1. Parametrise it: &alpha; = cos(&theta;/2), &beta; = e<sup>i&phi;</sup> sin(&theta;/2).</p>
+    <div class="grid g2"><div>
+      <label><b>&theta;</b>: <span id="d-th-v"></span>&deg;</label><input type="range" id="d-th" min="0" max="180" step="1" value="90">
+      <label><b>&phi;</b>: <span id="d-ph-v"></span>&deg;</label><input type="range" id="d-ph" min="0" max="360" step="1" value="0">
+      <div class="row"><button class="btn" id="d-h">H|0&#10217; (&theta;=90&deg;, &phi;=0)</button><button class="btn" id="d-0">|0&#10217;</button><button class="btn" id="d-1">|1&#10217;</button><button class="btn pri" id="d-m">Measure 1000&times;</button></div>
+    </div><div>
+      <table>
+        <tr><td>&alpha;</td><td class="mono" id="d-al"></td></tr>
+        <tr><td>&beta;</td><td class="mono" id="d-be"></td></tr>
+        <tr><td>|&alpha;|&sup2; + |&beta;|&sup2;</td><td class="mono" id="d-nm"></td></tr>
+        <tr><td>P(0) / P(1)</td><td class="mono" id="d-p"></td></tr>
+        <tr><td>Measured</td><td class="mono" id="d-ms">&mdash;</td></tr>
+      </table>
+    </div></div>
+    <div class="note">Transistor: ON or OFF. Classical bit: 0 or 1. Qubit: quantum state with probability amplitudes. The H gate gives P(0) = P(1) = 50%.</div>
+  </div>
+  <div class="card">
+    <h2>Level 4 &mdash; Same function, two circuits</h2>
+    <div class="row">
+      <select id="d-fn"><option value="not">NOT (A)</option><option value="xor">XOR (A, B)</option></select>
+      <button class="btn" id="d-a">A = 0</button><button class="btn" id="d-b">B = 0</button>
+    </div>
+    <div class="grid g2">
+      <div><h3>Classical</h3><p class="mono">Transistors &rarr; Logic gates &rarr; Digital output</p><p>Output: <span class="pill" id="d-co"></span></p></div>
+      <div><h3>Quantum</h3><p class="mono">Qubits &rarr; Quantum gates &rarr; Measurement</p><pre id="d-qc" class="mono"></pre><p>Measured: <span class="pill" id="d-qo"></span> <span id="d-match"></span></p></div>
+    </div>
+    <p class="muted">NOT uses an X gate. XOR uses a CNOT, where the target qubit ends up holding A &oplus; B. The quantum version is reversible (the inputs are not destroyed), unlike the classical gate.</p>
+  </div>
+</section>
+
+<!-- NOISE -->
+<section id="s-n" data-title="Noise">
+  <div class="card">
+    <h2>Transistor noise: V<sub>out</sub> = V<sub>ideal</sub> + n(t)</h2>
+    <p class="muted">Random bit stream sent as 0 V / 5 V. Gaussian noise n(t) with standard deviation &sigma; is added. A receiver decides 1 if the sampled voltage exceeds 2.5 V.</p>
+    <label><b>Noise &sigma;</b>: <span id="n-s-v"></span> V</label><input type="range" id="n-s" min="0" max="3" step="0.05" value="0.8">
+    <div class="row"><button class="btn" id="n-new">New random bits</button><span>Bit errors in this stream: <b id="n-err"></b></span><span>Theory BER = Q(2.5/&sigma;): <b id="n-th"></b></span></div>
+    <canvas id="n-cv" width="760" height="220"></canvas>
+    <p class="muted">Dashed: ideal. Solid: noisy. Horizontal line: 2.5 V decision threshold. Error rate is a smooth function of &sigma;: small noise is simply ignored by the digital abstraction.</p>
+  </div>
+  <div class="card">
+    <h2>Quantum noise on one qubit</h2>
+    <p class="muted">A single-qubit state is a Bloch vector (x, y, z). Noise shrinks it. Pick a start state and an error channel; apply it for n steps with error probability p per step.</p>
+    <div class="grid g2"><div>
+      <div class="row"><span>Start:</span><select id="q-st"><option value="0">|0&#10217; (z = +1)</option><option value="+">|+&#10217; = H|0&#10217; (x = +1)</option></select></div>
+      <div class="row"><span>Channel:</span><select id="q-ch"><option value="bit">Bit-flip (X error)</option><option value="phase">Phase-flip (Z error)</option><option value="dep">Depolarizing</option></select></div>
+      <label><b>Error probability p</b>: <span id="q-p-v"></span></label><input type="range" id="q-p" min="0" max="0.5" step="0.01" value="0.1">
+      <label><b>Steps n</b>: <span id="q-n-v"></span></label><input type="range" id="q-n" min="0" max="30" step="1" value="5">
+      <table>
+        <tr><td>Bloch vector (x, y, z)</td><td class="mono" id="q-v"></td></tr>
+        <tr><td>P(0) measured in Z basis</td><td class="mono" id="q-p0"></td></tr>
+        <tr><td>P(+) measured in X basis</td><td class="mono" id="q-pp"></td></tr>
+        <tr><td>Purity of state</td><td class="mono" id="q-pu"></td></tr>
+      </table>
+    </div><div>
+      <canvas id="q-cv" width="320" height="320"></canvas>
+      <p class="muted">x&ndash;z plane of the Bloch sphere. The unit circle holds pure states; noise pulls the point inward (a mixed state).</p>
+    </div></div>
+    <div class="note" id="q-msg"></div>
+  </div>
+  <div class="card">
+    <h2>Quantum error correction: 3-qubit repetition code</h2>
+    <p class="muted">Encode |0&#10217; &rarr; |000&#10217;, correct a single bit flip by majority vote. The logical error rate is 3p&sup2; &minus; 2p&sup3;, which beats the bare error rate p when p &lt; 0.5. (Phase flips are handled the same way in the Hadamard basis.)</p>
+    <label><b>Physical error probability p</b>: <span id="r-p-v"></span></label><input type="range" id="r-p" min="0.01" max="0.5" step="0.01" value="0.1">
+    <table>
+      <tr><td>Unprotected error rate (simulated)</td><td class="mono" id="r-u"></td></tr>
+      <tr><td>Protected error rate (simulated, 20000 trials)</td><td class="mono" id="r-e"></td></tr>
+      <tr><td>Protected error rate (theory 3p&sup2; &minus; 2p&sup3;)</td><td class="mono" id="r-t"></td></tr>
+    </table>
+    <div class="note"><b>Key comparison.</b> Classical noise perturbs a continuous voltage, and the digital threshold removes it as long as it stays small. A qubit has no such built-in restoring step: errors act on amplitudes and phases, they cannot be copied-and-compared (no-cloning), and measuring destroys the state. Hence quantum error correction uses redundancy plus syndrome measurements instead of reading the data directly.</div>
+  </div>
+</section>
+
+<!-- ASSESSMENT -->
+<section id="s-q" data-title="Assessment">
+  <div class="card">
+    <h2>Pre / post learning assessment</h2>
+    <p class="muted">Take it once before working through the modules (Pre), and again afterwards (Post). The platform reports your learning gain.</p>
+    <div class="row"><select id="z-mode"><option value="pre">Pre-assessment</option><option value="post">Post-assessment</option></select><button class="btn pri" id="z-sub">Submit</button></div>
+    <div id="z-qs"></div>
+    <div id="z-res"></div>
+  </div>
+</section>
+
+<!-- CODE -->
+<section id="s-code" data-title="Code">
+  <div class="card"><h2>Qiskit, NumPy and Arduino code</h2><p class="muted">Run these to reproduce each level in a real simulator (pip install qiskit qiskit-aer numpy).</p><div id="code-list"></div></div>
+</section>
+
+</main>
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var css=function(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()};
+
+/* ---------- tabs ---------- */
+var secs=[].slice.call(document.querySelectorAll('main > section'));
+var tabs=$('tabs');
+secs.forEach(function(s,i){
+  var b=document.createElement('button');b.textContent=s.getAttribute('data-title');
+  b.onclick=function(){show(i)};tabs.appendChild(b);
+});
+function show(i){
+  secs.forEach(function(s,j){s.classList.toggle('on',i===j)});
+  [].slice.call(tabs.children).forEach(function(b,j){b.classList.toggle('on',i===j)});
+  window.scrollTo(0,0);redrawAll();
+}
+
+/* ---------- Module A ---------- */
+var VCC=5,VF=2,VCESAT=0.2,BETA=100;
+function tr(vin,p){
+  var ib=vin>p.vth?(vin-p.vth)/p.rb:0;
+  var isat=(VCC-VF-VCESAT)/p.rc;
+  var want=BETA*ib, ic=Math.min(want,isat);
+  var reg=ic===0?'Cutoff (OFF)':(want>=isat?'Saturation (ON)':'Active');
+  var vo=ic===0?VCC:Math.max(VCESAT,VCC-VF-ic*p.rc);
+  return {ib:ib,ic:ic,isat:isat,reg:reg,vo:vo};
+}
+function aParams(){return{vin:+$('a-vin').value,vth:+$('a-vth').value,rc:+$('a-rc').value,rb:+$('a-rb').value*1000}}
+function setPill(el,v){el.textContent=v?'1 (HIGH)':'0 (LOW)';el.className='pill '+(v?'on1':'off0')}
+function drawA(){
+  var p=aParams();
+  $('a-vin-v').textContent=p.vin.toFixed(2);$('a-vth-v').textContent=p.vth.toFixed(2);
+  $('a-rc-v').textContent=p.rc;$('a-rb-v').textContent=p.rb/1000;
+  var r=tr(p.vin,p);
+  $('a-reg').textContent=r.reg;
+  $('a-ib').textContent=(r.ib*1e6).toFixed(1)+' \u00b5A';
+  $('a-ic').textContent=(r.ic*1e3).toFixed(2)+' mA';
+  $('a-vo').textContent=r.vo.toFixed(2)+' V';
+  var br=r.ic/r.isat;
+  $('a-led').style.opacity=(0.12+0.88*br).toFixed(2);
+  $('a-ledtxt').textContent=r.ic===0?'OFF':(br>0.95?'fully ON':'dim ('+Math.round(br*100)+'%)');
+  setPill($('a-bin'),p.vin>=p.vth);setPill($('a-bout'),r.vo>2.5);
+  var cv=$('a-cv'),c=cv.getContext('2d'),W=cv.width,H=cv.height,L=46,R=14,T=14,B=34;
+  c.clearRect(0,0,W,H);
+  var fg=css('--muted'),line=css('--line');
+  c.strokeStyle=line;c.fillStyle=fg;c.font='12px sans-serif';c.lineWidth=1;
+  for(var v=0;v<=5;v++){var x=L+(W-L-R)*v/5;c.beginPath();c.moveTo(x,T);c.lineTo(x,H-B);c.stroke();c.fillText(v+' V',x-10,H-B+16)}
+  for(var k=0;k<=5;k++){var y=H-B-(H-B-T)*k/5;c.beginPath();c.moveTo(L,y);c.lineTo(W-R,y);c.stroke();c.fillText(k+'',L-16,y+4)}
+  c.fillText('Vin',W/2,H-6);
+  function X(v){return L+(W-L-R)*v/5}function Y(f){return H-B-(H-B-T)*f}
+  c.lineWidth=2.5;
+  c.strokeStyle=css('--accent');c.beginPath();
+  for(var i=0;i<=250;i++){var vi=5*i/250,o=tr(vi,p).vo;i?c.lineTo(X(vi),Y(o/5)):c.moveTo(X(vi),Y(o/5))}c.stroke();
+  c.strokeStyle=css('--accent2');c.beginPath();
+  for(var j=0;j<=250;j++){var vj=5*j/250,t=tr(vj,p);var f=t.ic/t.isat;j?c.lineTo(X(vj),Y(f)):c.moveTo(X(vj),Y(f))}c.stroke();
+  c.fillStyle=css('--fg');c.beginPath();c.arc(X(p.vin),Y(r.vo/5),6,0,7);c.fill();
+  c.strokeStyle=line;c.setLineDash([4,4]);c.beginPath();c.moveTo(X(p.vth),T);c.lineTo(X(p.vth),H-B);c.stroke();c.setLineDash([]);
+  c.fillStyle=fg;c.fillText('Vth',X(p.vth)+4,T+12);
+}
+['a-vin','a-vth','a-rc','a-rb'].forEach(function(id){$(id).oninput=drawA});
+$('a-0').onclick=function(){$('a-vin').value=0;drawA()};
+$('a-1').onclick=function(){$('a-vin').value=5;drawA()};
+
+/* ---------- Module B ---------- */
+var G={NOT:function(a){return a?0:1},AND:function(a,b){return a&b},OR:function(a,b){return a|b},NAND:function(a,b){return 1-(a&b)},NOR:function(a,b){return 1-(a|b)},XOR:function(a,b){return a^b}};
+var bA=0,bB=0;
+function drawB(){
+  $('b-a').textContent='A = '+bA;$('b-b').textContent='B = '+bB;
+  var h='';Object.keys(G).forEach(function(n){
+    var o=n==='NOT'?G[n](bA):G[n](bA,bB);
+    h+='<div class="gate"><div class="nm">'+n+'</div><div class="muted">'+(n==='NOT'?'A='+bA:'A='+bA+', B='+bB)+'</div><span class="pill '+(o?'on1':'off0')+'">'+o+'</span></div>';
+  });$('b-cards').innerHTML=h;
+  var t='<tr><th>A</th><th>B</th>'+Object.keys(G).map(function(n){return'<th>'+n+(n==='NOT'?'(A)':'')+'</th>'}).join('')+'</tr>';
+  for(var a=0;a<2;a++)for(var b=0;b<2;b++){
+    t+='<tr class="'+(a===bA&&b===bB?'hl':'')+'"><td>'+a+'</td><td>'+b+'</td>'+Object.keys(G).map(function(n){return'<td>'+(n==='NOT'?G[n](a):G[n](a,b))+'</td>'}).join('')+'</tr>';
+  }
+  $('b-tt').innerHTML=t;
+}
+$('b-a').onclick=function(){bA^=1;drawB()};$('b-b').onclick=function(){bB^=1;drawB()};
+
+/* ---------- Quantum core ---------- */
+var S2=Math.SQRT1_2;
+var U={X:[[[0,0],[1,0]],[[1,0],[0,0]]],Y:[[[0,0],[0,-1]],[[0,1],[0,0]]],Z:[[[1,0],[0,0]],[[0,0],[-1,0]]],H:[[[S2,0],[S2,0]],[[S2,0],[-S2,0]]]};
+function cm(a,b){return[a[0]*b[0]-a[1]*b[1],a[0]*b[1]+a[1]*b[0]]}
+function ca(a,b){return[a[0]+b[0],a[1]+b[1]]}
+function apply1(s,k,M){
+  var n=s.map(function(x){return x.slice()});
+  for(var i=0;i<4;i++){if(i&(1<<k))continue;var j=i|(1<<k);var a=s[i],b=s[j];
+    n[i]=ca(cm(M[0][0],a),cm(M[0][1],b));n[j]=ca(cm(M[1][0],a),cm(M[1][1],b))}
+  return n;
+}
+function cnot(s,c,t){
+  var n=s.map(function(x){return x.slice()});
+  for(var i=0;i<4;i++){if((i&(1<<c))&&!(i&(1<<t))){var j=i|(1<<t);n[i]=s[j];n[j]=s[i]}}
+  return n;
+}
+function run(init,ops){
+  var s=[[0,0],[0,0],[0,0],[0,0]];s[init[1]*2+init[0]]=[1,0];
+  ops.forEach(function(o){s=o.g==='CNOT'?cnot(s,o.c,o.t):apply1(s,o.q,U[o.g])});
+  return s;
+}
+function probs(s){return s.map(function(a){return a[0]*a[0]+a[1]*a[1]})}
+function sample(p,shots){var c=[0,0,0,0];for(var i=0;i<shots;i++){var r=Math.random(),acc=0;for(var k=0;k<4;k++){acc+=p[k];if(r<acc||k===3){c[k]++;break}}}return c}
+function fmtC(c){
+  var r=c[0],i=c[1],e=1e-9;
+  if(Math.abs(i)<e)return r.toFixed(3);
+  if(Math.abs(r)<e)return i.toFixed(3)+'i';
+  return r.toFixed(3)+(i<0?' \u2212 ':' + ')+Math.abs(i).toFixed(3)+'i';
+}
+function lab(i){return'|'+((i>>1)&1)+''+(i&1)+'\u27e9'}
+function bars(el,labels,vals,fmt){
+  el.innerHTML=labels.map(function(l,i){
+    return'<div class="bar"><span class="lab">'+l+'</span><span class="trk"><span class="fil" style="width:'+(100*vals[i]).toFixed(1)+'%"></span></span><span class="val">'+fmt(vals[i],i)+'</span></div>';
+  }).join('');
+}
+
+/* ---------- Module C ---------- */
+var cInit=[0,0],cOps=[],cTarget=0;
+function circText(init,ops){
+  var lines=['q0: |'+init[0]+'\u27e9 \u2500','q1: |'+init[1]+'\u27e9 \u2500'];
+  ops.forEach(function(o){
+    for(var q=0;q<2;q++){
+      var s;
+      if(o.g==='CNOT')s=(q===o.c)?'\u2500\u25cf\u2500':'\u2500\u2295\u2500';
+      else s=(q===o.q)?'['+o.g+']':'\u2500\u2500\u2500';
+      lines[q]+=s+'\u2500';
+    }
+  });
+  lines[0]+='\u2500 M';lines[1]+='\u2500 M';
+  return lines.join('\n');
+}
+function drawC(){
+  $('c-i0').textContent='|'+cInit[0]+'\u27e9';$('c-i1').textContent='|'+cInit[1]+'\u27e9';
+  $('c-t0').className='btn'+(cTarget===0?' sel':'');$('c-t1').className='btn'+(cTarget===1?' sel':'');
+  $('c-circ').textContent=circText(cInit,cOps);
+  var s=run(cInit,cOps),p=probs(s);
+  var t='<tr><th>Basis</th><th>Amplitude</th><th>Prob.</th></tr>';
+  for(var i=0;i<4;i++)t+='<tr><td class="mono">'+lab(i)+'</td><td class="mono">'+fmtC(s[i])+'</td><td class="mono">'+(p[i]*100).toFixed(1)+'%</td></tr>';
+  $('c-amp').innerHTML=t;
+  bars($('c-prob'),[0,1,2,3].map(lab),p,function(v){return(v*100).toFixed(1)+'%'});
+}
+$('c-i0').onclick=function(){cInit[0]^=1;drawC()};$('c-i1').onclick=function(){cInit[1]^=1;drawC()};
+$('c-t0').onclick=function(){cTarget=0;drawC()};$('c-t1').onclick=function(){cTarget=1;drawC()};
+[].slice.call(document.querySelectorAll('[data-g]')).forEach(function(b){
+  b.onclick=function(){cOps.push({g:b.getAttribute('data-g'),q:cTarget});drawC()};
+});
+$('c-cn01').onclick=function(){cOps.push({g:'CNOT',c:0,t:1});drawC()};
+$('c-cn10').onclick=function(){cOps.push({g:'CNOT',c:1,t:0});drawC()};
+$('c-undo').onclick=function(){cOps.pop();drawC()};
+$('c-reset').onclick=function(){cOps=[];cInit=[0,0];$('c-cnt').textContent='Press Measure.';drawC()};
+$('c-bell').onclick=function(){cInit=[0,0];cOps=[{g:'H',q:0},{g:'CNOT',c:0,t:1}];drawC()};
+$('c-sup').onclick=function(){cInit=[0,0];cOps=[{g:'H',q:0}];drawC()};
+$('c-meas').onclick=function(){
+  var p=probs(run(cInit,cOps)),c=sample(p,1024);
+  bars($('c-cnt'),[0,1,2,3].map(lab),c.map(function(x){return x/1024}),function(v,i){return c[i]+' / 1024'});
+};
+
+/* ---------- Module D ---------- */
+function dState(){
+  var th=+$('d-th').value*Math.PI/180,ph=+$('d-ph').value*Math.PI/180;
+  return{al:[Math.cos(th/2),0],be:[Math.sin(th/2)*Math.cos(ph),Math.sin(th/2)*Math.sin(ph)],th:+$('d-th').value,ph:+$('d-ph').value};
+}
+function drawD1(){
+  var s=dState();$('d-th-v').textContent=s.th;$('d-ph-v').textContent=s.ph;
+  var p0=s.al[0]*s.al[0],p1=s.be[0]*s.be[0]+s.be[1]*s.be[1];
+  $('d-al').textContent=fmtC(s.al);$('d-be').textContent=fmtC(s.be);
+  $('d-nm').textContent=(p0+p1).toFixed(3);
+  $('d-p').textContent=(p0*100).toFixed(1)+'% / '+(p1*100).toFixed(1)+'%';
+}
+['d-th','d-ph'].forEach(function(id){$(id).oninput=drawD1});
+$('d-h').onclick=function(){$('d-th').value=90;$('d-ph').value=0;drawD1()};
+$('d-0').onclick=function(){$('d-th').value=0;$('d-ph').value=0;drawD1()};
+$('d-1').onclick=function(){$('d-th').value=180;$('d-ph').value=0;drawD1()};
+$('d-m').onclick=function(){
+  var s=dState(),p1=s.be[0]*s.be[0]+s.be[1]*s.be[1],n1=0;
+  for(var i=0;i<1000;i++)if(Math.random()<p1)n1++;
+  $('d-ms').textContent='0: '+(1000-n1)+'   1: '+n1;
+};
+var dA=0,dB=0;
+function drawD2(){
+  var fn=$('d-fn').value;
+  $('d-a').textContent='A = '+dA;$('d-b').textContent='B = '+dB;
+  $('d-b').style.display=fn==='xor'?'':'none';
+  var cl,ops,init,outq;
+  if(fn==='not'){cl=G.NOT(dA);init=[dA,0];ops=[{g:'X',q:0}];outq=0}
+  else{cl=G.XOR(dA,dB);init=[dA,dB];ops=[{g:'CNOT',c:0,t:1}];outq=1}
+  setPill($('d-co'),cl);
+  $('d-qc').textContent=circText(init,ops);
+  var s=run(init,ops),p=probs(s),m=sample(p,1),idx=m.indexOf(1),qb=(idx>>outq)&1;
+  setPill($('d-qo'),qb);
+  $('d-match').innerHTML=qb===cl?'<span class="good">matches classical</span>':'<span class="bad">mismatch</span>';
+}
+$('d-fn').onchange=drawD2;$('d-a').onclick=function(){dA^=1;drawD2()};$('d-b').onclick=function(){dB^=1;drawD2()};
+
+/* ---------- Noise: classical ---------- */
+var nBits=[],nRand=[];
+function gauss(){var u=1-Math.random(),v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function erfc(x){var z=Math.abs(x),t=1/(1+0.5*z),r=t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+t*(-0.82215223+t*0.17087277)))))))));return x>=0?r:2-r}
+function newBits(){nBits=[];nRand=[];for(var i=0;i<32;i++){nBits.push(Math.random()<0.5?1:0);var a=[];for(var k=0;k<8;k++)a.push(gauss());nRand.push(a)}drawN()}
+function drawN(){
+  var sg=+$('n-s').value;$('n-s-v').textContent=sg.toFixed(2);
+  var cv=$('n-cv'),c=cv.getContext('2d'),W=cv.width,H=cv.height,L=36,T=14,B=14;
+  c.clearRect(0,0,W,H);
+  var N=nBits.length,per=8,wid=(W-L-10)/N;
+  function X(i,k){return L+wid*(i+k/per)}function Y(v){return H-B-(H-B-T)*(v+1)/7}
+  c.font='12px sans-serif';c.fillStyle=css('--muted');
+  c.fillText('5 V',4,Y(5)+4);c.fillText('0 V',4,Y(0)+4);
+  c.strokeStyle=css('--line');c.lineWidth=1;c.setLineDash([]);
+  c.beginPath();c.moveTo(L,Y(2.5));c.lineTo(W-4,Y(2.5));c.stroke();
+  c.setLineDash([5,4]);c.strokeStyle=css('--muted');c.lineWidth=1.5;c.beginPath();
+  nBits.forEach(function(b,i){var y=Y(b*5);i?c.lineTo(X(i,0),y):c.moveTo(X(i,0),y);c.lineTo(X(i+1,0),y)});c.stroke();c.setLineDash([]);
+  c.strokeStyle=css('--accent');c.lineWidth=1.5;c.beginPath();
+  var first=true,errs=0;
+  nBits.forEach(function(b,i){
+    for(var k=0;k<per;k++){var v=b*5+sg*nRand[i][k],x=X(i,k),y=Y(v);first?c.moveTo(x,y):c.lineTo(x,y);first=false}
+    var dec=(b*5+sg*nRand[i][0])>2.5?1:0;
+    if(dec!==b){errs++;c.fillStyle=css('--accent2');c.fillRect(X(i,0),H-B+2,wid-1,5)}
+  });c.stroke();
+  $('n-err').textContent=errs+' / '+N;
+  var ber=sg===0?0:0.5*erfc(2.5/(sg*Math.SQRT2));
+  $('n-th').textContent=(ber*100).toFixed(2)+'%';
+}
+$('n-s').oninput=drawN;$('n-new').onclick=newBits;
+
+/* ---------- Noise: quantum ---------- */
+function qCalc(){
+  var st=$('q-st').value,ch=$('q-ch').value,p=+$('q-p').value,n=+$('q-n').value;
+  var f=1-2*p,fd=1-4*p/3,fx=1,fy=1,fz=1;
+  if(ch==='bit'){fy=f;fz=f}else if(ch==='phase'){fx=f;fy=f}else{fx=fd;fy=fd;fz=fd}
+  var v=st==='0'?[0,0,1]:[1,0,0];
+  return{p:p,n:n,ch:ch,st:st,v:[v[0]*Math.pow(fx,n),v[1]*Math.pow(fy,n),v[2]*Math.pow(fz,n)]};
+}
+function drawQ(){
+  var q=qCalc();$('q-p-v').textContent=q.p.toFixed(2);$('q-n-v').textContent=q.n;
+  var x=q.v[0],y=q.v[1],z=q.v[2];
+  $('q-v').textContent='('+x.toFixed(3)+', '+y.toFixed(3)+', '+z.toFixed(3)+')';
+  $('q-p0').textContent=((1+z)/2*100).toFixed(1)+'%';
+  $('q-pp').textContent=((1+x)/2*100).toFixed(1)+'%';
+  $('q-pu').textContent=((1+x*x+y*y+z*z)/2).toFixed(3)+'  (1 = pure, 0.5 = fully mixed)';
+  var msg;
+  if(q.ch==='bit')msg=q.st==='0'?'Bit-flip noise randomises |0\u27e9 toward a 50/50 mix of 0 and 1: the classical-looking error. P(0) decays toward 50%.':'Bit-flip noise barely touches |+\u27e9, since X leaves |+\u27e9 unchanged. The error only matters for states that X changes.';
+  else if(q.ch==='phase')msg=q.st==='0'?'Phase-flip noise does nothing to |0\u27e9: measuring in the Z basis shows no change. A purely quantum error with no classical analogue.':'Phase-flip noise destroys the superposition |+\u27e9: P(0) stays 50% but the X-basis outcome P(+) decays to 50%. The phase information (coherence) is lost. This is dephasing.';
+  else msg='Depolarizing noise shrinks the whole Bloch vector toward the centre: the qubit drifts to the maximally mixed state, equal parts of bit-flip, phase-flip and both.';
+  $('q-msg').textContent=msg;
+  var cv=$('q-cv'),c=cv.getContext('2d'),W=cv.width,H=cv.height,cx=W/2,cy=H/2,R=W/2-34;
+  c.clearRect(0,0,W,H);c.strokeStyle=css('--line');c.lineWidth=1.5;
+  c.beginPath();c.arc(cx,cy,R,0,7);c.stroke();
+  c.beginPath();c.moveTo(cx-R,cy);c.lineTo(cx+R,cy);c.moveTo(cx,cy-R);c.lineTo(cx,cy+R);c.stroke();
+  c.fillStyle=css('--muted');c.font='13px sans-serif';
+  c.fillText('|0\u27e9',cx-10,cy-R-8);c.fillText('|1\u27e9',cx-10,cy+R+18);c.fillText('|+\u27e9',cx+R+4,cy+4);c.fillText('|\u2212\u27e9',2,cy+4);
+  var px=cx+R*x,py=cy-R*z;
+  c.strokeStyle=css('--accent');c.lineWidth=2.5;c.beginPath();c.moveTo(cx,cy);c.lineTo(px,py);c.stroke();
+  c.fillStyle=css('--accent2');c.beginPath();c.arc(px,py,6,0,7);c.fill();
+}
+['q-st','q-ch'].forEach(function(id){$(id).onchange=drawQ});['q-p','q-n'].forEach(function(id){$(id).oninput=drawQ});
+
+/* ---------- QEC ---------- */
+function drawR(){
+  var p=+$('r-p').value;$('r-p-v').textContent=p.toFixed(2);
+  var N=20000,u=0,e=0;
+  for(var i=0;i<N;i++){
+    if(Math.random()<p)u++;
+    var f=(Math.random()<p)+(Math.random()<p)+(Math.random()<p);
+    if(f>=2)e++;
+  }
+  $('r-u').textContent=(u/N*100).toFixed(2)+'%';
+  $('r-e').textContent=(e/N*100).toFixed(2)+'%';
+  $('r-t').textContent=((3*p*p-2*p*p*p)*100).toFixed(2)+'%';
+}
+$('r-p').oninput=drawR;
+
+/* ---------- Assessment ---------- */
+var QS=[
+ {q:'A transistor used as a switch is in its cutoff region. The load current is:',o:['Maximum','Almost zero (switch OFF)','Equal to the base current','Negative'],a:1},
+ {q:'Which quantum gate is the counterpart of a classical NOT gate?',o:['H','Z','X','CNOT'],a:2},
+ {q:'Measuring the state H|0\u27e9 many times gives:',o:['Always 0','Always 1','50% 0 and 50% 1','A value between 0 and 1'],a:2},
+ {q:'For |\u03c8\u27e9 = \u03b1|0\u27e9 + \u03b2|1\u27e9 we need |\u03b1|\u00b2 + |\u03b2|\u00b2 = 1 because:',o:['Amplitudes are always real','Probabilities of the outcomes must sum to 1','The qubit must be |0\u27e9 or |1\u27e9','Voltage is limited to Vcc'],a:1},
+ {q:'Which noise process swaps |0\u27e9 and |1\u27e9 with probability p?',o:['Phase-flip','Bit-flip','Amplifier gain error','Thermal drift only'],a:1},
+ {q:'What does a digital circuit have that a bare qubit lacks?',o:['A threshold that restores noisy levels to 0 or 1','Superposition','Gates','Outputs'],a:0},
+ {q:'A CNOT gate with control = 1 and target = 0 produces target =',o:['0','1','Superposition','Undefined'],a:1},
+ {q:'Why is classical error correction by copying not directly possible for qubits?',o:['Qubits are too fast','No-cloning theorem: unknown quantum states cannot be copied','Qubits have no noise','Gates are irreversible'],a:1}
+];
+var results={pre:null,post:null};
+function buildQuiz(){
+  $('z-qs').innerHTML=QS.map(function(q,i){
+    return'<div class="q"><b>'+(i+1)+'. '+q.q+'</b>'+q.o.map(function(o,j){return'<label><input type="radio" name="z'+i+'" value="'+j+'"> '+o+'</label>'}).join('')+'</div>';
+  }).join('');
+}
+function showRes(){
+  var h='<table><tr><th>Assessment</th><th>Score</th></tr>';
+  ['pre','post'].forEach(function(m){h+='<tr><td>'+(m==='pre'?'Pre':'Post')+'</td><td>'+(results[m]===null?'not taken':results[m]+' / '+QS.length)+'</td></tr>'});
+  h+='</table>';
+  if(results.pre!==null&&results.post!==null){
+    var g=results.post-results.pre,nh=results.pre===QS.length?0:(results.post-results.pre)/(QS.length-results.pre);
+    h+='<p>Learning gain: <b>'+(g>=0?'+':'')+g+'</b> points. Normalised gain (Hake): <b>'+nh.toFixed(2)+'</b></p>';
+  }
+  $('z-res').innerHTML=h;
+}
+$('z-sub').onclick=function(){
+  var sc=0,answered=0,rev='';
+  QS.forEach(function(q,i){
+    var r=document.querySelector('input[name="z'+i+'"]:checked');
+    if(r){answered++;var ok=+r.value===q.a;if(ok)sc++;rev+='<div>Q'+(i+1)+': '+(ok?'<span class="good">correct</span>':'<span class="bad">wrong</span> \u2013 answer: '+q.o[q.a])+'</div>'}
+    else rev+='<div>Q'+(i+1)+': <span class="muted">unanswered</span></div>';
+  });
+  if(!answered){$('z-res').innerHTML='<p class="bad">Answer at least one question.</p>';return}
+  results[$('z-mode').value]=sc;showRes();
+  $('z-res').insertAdjacentHTML('beforeend','<h3>Review</h3>'+rev);
+};
+
+/* ---------- Code listing ---------- */
+var CODE=[
+['Level 2: NOT gate vs X gate (Qiskit)',
+"from qiskit import QuantumCircuit\nfrom qiskit_aer import AerSimulator\n\nqc = QuantumCircuit(1, 1)\nqc.x(0)            # X|0> = |1>\nqc.measure(0, 0)\n\nsim = AerSimulator()\nprint(sim.run(qc, shots=1024).result().get_counts())   # {'1': 1024}"],
+['Level 3: superposition with H',
+"from qiskit import QuantumCircuit\nfrom qiskit_aer import AerSimulator\n\nqc = QuantumCircuit(1, 1)\nqc.h(0)            # (|0> + |1>)/sqrt(2)\nqc.measure(0, 0)\n\nprint(AerSimulator().run(qc, shots=1024).result().get_counts())  # ~50/50"],
+['Level 4: XOR with CNOT, and a Bell state',
+"from qiskit import QuantumCircuit\nfrom qiskit_aer import AerSimulator\n\n# XOR: q1 = A xor B   (A=1, B=1 -> 0)\nxor = QuantumCircuit(2, 1)\nxor.x(0); xor.x(1)\nxor.cx(0, 1)\nxor.measure(1, 0)\nprint(AerSimulator().run(xor, shots=100).result().get_counts())\n\n# Bell state\nbell = QuantumCircuit(2, 2)\nbell.h(0); bell.cx(0, 1)\nbell.measure([0, 1], [0, 1])\nprint(AerSimulator().run(bell, shots=1024).result().get_counts())  # 00 and 11"],
+['Noise: bit-flip, phase-flip, depolarizing (Qiskit Aer)',
+"from qiskit import QuantumCircuit, transpile\nfrom qiskit_aer import AerSimulator\nfrom qiskit_aer.noise import NoiseModel, pauli_error, depolarizing_error\n\np = 0.1\nnm = NoiseModel()\nbit_flip   = pauli_error([('X', p), ('I', 1 - p)])\nphase_flip = pauli_error([('Z', p), ('I', 1 - p)])\ndepol      = depolarizing_error(p, 1)\nnm.add_all_qubit_quantum_error(bit_flip, ['id'])   # swap for phase_flip / depol\n\nqc = QuantumCircuit(1, 1)\nfor _ in range(5):\n    qc.id(0)       # idle steps where noise acts\nqc.measure(0, 0)\n\nsim = AerSimulator(noise_model=nm)\nprint(sim.run(transpile(qc, sim), shots=4096).result().get_counts())"],
+['NumPy: tiny quantum simulator',
+"import numpy as np\n\nX = np.array([[0, 1], [1, 0]])\nZ = np.array([[1, 0], [0, -1]])\nH = np.array([[1, 1], [1, -1]]) / np.sqrt(2)\nket0 = np.array([1, 0])\n\ndef measure(psi, shots=1000):\n    p = np.abs(psi) ** 2\n    return np.random.multinomial(shots, p / p.sum())\n\nprint(measure(X @ ket0))   # [0 1000]\nprint(measure(H @ ket0))   # about [500 500]\n\n# classical noise  Vout = Videal + n(t)\nbits = np.random.randint(0, 2, 10000)\nv = bits * 5 + np.random.normal(0, 0.8, bits.size)\nprint('BER =', np.mean((v > 2.5) != bits))"],
+['Arduino/ESP32: transistor switch driver',
+"const int BASE = 5;     // to base via 10k (or MOSFET gate)\nconst int SENSE = A0;   // collector (use a divider on 3.3 V ESP32)\n\nvoid setup() {\n  pinMode(BASE, OUTPUT);\n  Serial.begin(115200);\n}\n\nvoid loop() {\n  for (int bit = 0; bit <= 1; bit++) {\n    digitalWrite(BASE, bit);          // Vin = 0 -> LED OFF, Vin = 1 -> LED ON\n    delay(300);\n    float vout = analogRead(SENSE) * 5.0 / 1023.0;\n    Serial.print(\"Vin=\"); Serial.print(bit);\n    Serial.print(\"  Vcollector=\"); Serial.println(vout);\n    delay(700);\n  }\n}"]
+];
+(function(){
+  var host=$('code-list');
+  CODE.forEach(function(c){
+    var h=document.createElement('h3');h.textContent=c[0];
+    var b=document.createElement('button');b.className='btn copy';b.textContent='Copy';
+    var pre=document.createElement('pre');pre.textContent=c[1];
+    b.onclick=function(){try{navigator.clipboard.writeText(c[1]);b.textContent='Copied'}catch(e){b.textContent='Select + copy'}setTimeout(function(){b.textContent='Copy'},1500)};
+    host.appendChild(b);host.appendChild(h);host.appendChild(pre);
+  });
+})();
+
+/* ---------- init ---------- */
+function redrawAll(){drawA();drawB();drawC();drawD1();drawD2();drawN();drawQ();drawR()}
+buildQuiz();showRes();newBits();show(0);
+if(window.matchMedia)window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
+})();
+</script>
+</body>
+</html>
